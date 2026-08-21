@@ -18,21 +18,21 @@ func taskHandler(w http.ResponseWriter, r *http.Request) {
 	case http.MethodDelete:
 		deleteTaskHandler(w, r)
 	default:
-		writeJSON(w, map[string]string{"error": "method not allowed"})
+		writeJSON(w, http.StatusMethodNotAllowed, map[string]string{"error": "method not allowed"})
 	}
 }
 
 func deleteTaskHandler(w http.ResponseWriter, r *http.Request) {
 	id := strings.TrimSpace(r.FormValue("id"))
 	if id == "" {
-		writeJSON(w, map[string]string{"error": "id is required"})
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "id is required"})
 		return
 	}
 
 	if err := db.DeleteTask(id); err != nil {
-		writeJSON(w, map[string]string{"error": err.Error()})
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
 
-	writeJSON(w, map[string]string{})
+	writeJSON(w, http.StatusOK, map[string]string{})
 }

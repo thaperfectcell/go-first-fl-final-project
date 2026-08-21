@@ -74,8 +74,8 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 			dayAllowed[d] = true
 		}
 
-		date = date.AddDate(0, 0, 1)
-		for {
+		date, searchEnd := searchRange(now, date)
+		for !date.After(searchEnd) {
 			weekday := int(date.Weekday())
 			if weekday == 0 {
 				weekday = 7
@@ -85,6 +85,7 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 			}
 			date = date.AddDate(0, 0, 1)
 		}
+		return "", errors.New("next date not found")
 
 	case "m":
 		if len(rules) != 2 && len(rules) != 3 {
@@ -124,8 +125,8 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 			}
 		}
 
-		date = date.AddDate(0, 0, 1)
-		for {
+		date, searchEnd := searchRange(now, date)
+		for !date.After(searchEnd) {
 			if afterNow(date, now) && monthAllowed[int(date.Month())] {
 				day := date.Day()
 				lastDay := time.Date(date.Year(), date.Month()+1, 0, 0, 0, 0, 0, time.UTC).Day()
@@ -135,12 +136,28 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 			}
 			date = date.AddDate(0, 0, 1)
 		}
+		return "", errors.New("next date not found")
 	}
 
 	return "", fmt.Errorf("unsupported repeat format")
 }
 
+func searchRange(now, date time.Time) (start, end time.Time) {
+	nowDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+	date = time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, time.UTC).AddDate(0, 0, 1)
+	if !date.After(nowDay) {
+		date = nowDay.AddDate(0, 0, 1)
+	}
+	end = date.AddDate(8, 0, 0)
+	return date, end
+}
+
 func nextDayHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
 	nowParam := strings.TrimSpace(r.FormValue("now"))
 	date := strings.TrimSpace(r.FormValue("date"))
 	repeat := strings.TrimSpace(r.FormValue("repeat"))
@@ -149,7 +166,7 @@ func nextDayHandler(w http.ResponseWriter, r *http.Request) {
 	if nowParam != "" {
 		parsed, err := time.Parse(dateFormat, nowParam)
 		if err != nil {
-			w.Write([]byte(err.Error()))
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 		now = parsed
@@ -157,7 +174,7 @@ func nextDayHandler(w http.ResponseWriter, r *http.Request) {
 
 	next, err := NextDate(now, date, repeat)
 	if err != nil {
-		w.Write([]byte(err.Error()))
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 

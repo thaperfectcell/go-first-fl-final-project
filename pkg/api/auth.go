@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -22,7 +21,7 @@ func passwordHash(password string) string {
 	return hex.EncodeToString(sum[:])
 }
 
-func createToken(password string) (string, error) {
+func CreateToken(password string) (string, error) {
 	claims := jwt.MapClaims{
 		"pwd": passwordHash(password),
 		"exp": time.Now().Add(tokenTTL).Unix(),
@@ -63,7 +62,7 @@ func validateToken(tokenStr, password string) bool {
 
 func auth(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		pass := os.Getenv("TODO_PASSWORD")
+		pass := todoPassword
 		if pass == "" {
 			next(w, r)
 			return

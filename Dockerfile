@@ -7,16 +7,15 @@ RUN go mod download
 COPY . .
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /out/scheduler .
 
-FROM ubuntu:latest
+FROM alpine:latest
 WORKDIR /app
 
 COPY --from=builder /out/scheduler /app/scheduler
 COPY web /app/web
 
-EXPOSE 7540
 ENV TODO_PORT=7540
 ENV TODO_DBFILE=/data/scheduler.db
-ENV TODO_PASSWORD=
+ENV TODO_PASSWORD=12345
 
 VOLUME ["/data"]
 CMD ["/app/scheduler"]

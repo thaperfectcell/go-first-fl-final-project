@@ -2,10 +2,13 @@ package db
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
 )
+
+const DefaultTaskLimit = 50
 
 type Task struct {
 	ID      string `json:"id" db:"id"`
@@ -36,7 +39,7 @@ func GetTask(id string) (*Task, error) {
 	)
 
 	if err := row.Scan(&idVal, &date, &title, &comment, &repeat); err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, fmt.Errorf("task not found")
 		}
 		return nil, err
@@ -102,7 +105,7 @@ func DeleteTask(id string) error {
 
 func Tasks(limit int, search string) ([]*Task, error) {
 	if limit <= 0 {
-		limit = 50
+		limit = DefaultTaskLimit
 	}
 
 	search = strings.TrimSpace(search)

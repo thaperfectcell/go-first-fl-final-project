@@ -12,13 +12,13 @@ type tasksResp struct {
 
 func tasksHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		writeJSON(w, map[string]string{"error": "method not allowed"})
+		writeJSON(w, http.StatusMethodNotAllowed, map[string]string{"error": "method not allowed"})
 		return
 	}
 
-	tasks, err := db.Tasks(50, r.FormValue("search"))
+	tasks, err := db.Tasks(db.DefaultTaskLimit, r.FormValue("search"))
 	if err != nil {
-		writeJSON(w, map[string]string{"error": err.Error()})
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
 
@@ -26,5 +26,5 @@ func tasksHandler(w http.ResponseWriter, r *http.Request) {
 		tasks = make([]*db.Task, 0)
 	}
 
-	writeJSON(w, tasksResp{Tasks: tasks})
+	writeJSON(w, http.StatusOK, tasksResp{Tasks: tasks})
 }

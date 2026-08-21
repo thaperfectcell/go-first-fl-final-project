@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -11,9 +12,12 @@ import (
 	"github.com/thaperfectcell/go-first-fl-final-project/pkg/db"
 )
 
-func writeJSON(w http.ResponseWriter, data any) {
+func writeJSON(w http.ResponseWriter, code int, data any) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	_ = json.NewEncoder(w).Encode(data)
+	w.WriteHeader(code)
+	if err := json.NewEncoder(w).Encode(data); err != nil {
+		log.Printf("write json: %v", err)
+	}
 }
 
 func checkDate(task *db.Task) error {
@@ -54,31 +58,31 @@ func checkDate(task *db.Task) error {
 func addTaskHandler(w http.ResponseWriter, r *http.Request) {
 	var task db.Task
 	if err := json.NewDecoder(r.Body).Decode(&task); err != nil {
-		writeJSON(w, map[string]string{"error": err.Error()})
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
 
 	task.Title = strings.TrimSpace(task.Title)
 	if task.Title == "" {
-		writeJSON(w, map[string]string{"error": "title is required"})
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "title is required"})
 		return
 	}
 
 	if err := checkDate(&task); err != nil {
 		var parseErr *time.ParseError
 		if errors.As(err, &parseErr) {
-			writeJSON(w, map[string]string{"error": "invalid date format"})
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid date format"})
 			return
 		}
-		writeJSON(w, map[string]string{"error": err.Error()})
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
 
 	id, err := db.AddTask(&task)
 	if err != nil {
-		writeJSON(w, map[string]string{"error": err.Error()})
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
 
-	writeJSON(w, map[string]string{"id": strconv.FormatInt(id, 10)})
+	writeJSON(w, http.StatusOK, map[string]string{"id": strconv.FormatInt(id, 10)})
 }

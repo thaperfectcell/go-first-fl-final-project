@@ -10,47 +10,41 @@ import (
 
 func doneTaskHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		writeJSON(w, map[string]string{"error": "method not allowed"})
+		writeJSON(w, http.StatusMethodNotAllowed, map[string]string{"error": "method not allowed"})
 		return
 	}
 
 	id := strings.TrimSpace(r.FormValue("id"))
 	if id == "" {
-		writeJSON(w, map[string]string{"error": "id is required"})
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "id is required"})
 		return
 	}
 
 	task, err := db.GetTask(id)
 	if err != nil {
-		writeJSON(w, map[string]string{"error": err.Error()})
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
 
 	if strings.TrimSpace(task.Repeat) == "" {
 		if err := db.DeleteTask(id); err != nil {
-			writeJSON(w, map[string]string{"error": err.Error()})
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 			return
 		}
-		writeJSON(w, map[string]string{})
+		writeJSON(w, http.StatusOK, map[string]string{})
 		return
 	}
 
-	base, err := time.Parse(dateFormat, task.Date)
+	next, err := NextDate(time.Now(), task.Date, task.Repeat)
 	if err != nil {
-		writeJSON(w, map[string]string{"error": err.Error()})
-		return
-	}
-
-	next, err := NextDate(base, task.Date, task.Repeat)
-	if err != nil {
-		writeJSON(w, map[string]string{"error": err.Error()})
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
 
 	if err := db.UpdateDate(next, id); err != nil {
-		writeJSON(w, map[string]string{"error": err.Error()})
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
 
-	writeJSON(w, map[string]string{})
+	writeJSON(w, http.StatusOK, map[string]string{})
 }

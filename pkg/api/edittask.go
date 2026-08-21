@@ -11,46 +11,46 @@ import (
 func getTaskHandler(w http.ResponseWriter, r *http.Request) {
 	id := strings.TrimSpace(r.FormValue("id"))
 	if id == "" {
-		writeJSON(w, map[string]string{"error": "id is required"})
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "id is required"})
 		return
 	}
 
 	task, err := db.GetTask(id)
 	if err != nil {
-		writeJSON(w, map[string]string{"error": err.Error()})
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
 
-	writeJSON(w, task)
+	writeJSON(w, http.StatusOK, task)
 }
 
 func putTaskHandler(w http.ResponseWriter, r *http.Request) {
 	var task db.Task
 	if err := json.NewDecoder(r.Body).Decode(&task); err != nil {
-		writeJSON(w, map[string]string{"error": err.Error()})
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
 
 	task.ID = strings.TrimSpace(task.ID)
 	task.Title = strings.TrimSpace(task.Title)
 	if task.ID == "" {
-		writeJSON(w, map[string]string{"error": "id is required"})
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "id is required"})
 		return
 	}
 	if task.Title == "" {
-		writeJSON(w, map[string]string{"error": "title is required"})
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "title is required"})
 		return
 	}
 
 	if err := checkDate(&task); err != nil {
-		writeJSON(w, map[string]string{"error": err.Error()})
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
 
 	if err := db.UpdateTask(&task); err != nil {
-		writeJSON(w, map[string]string{"error": err.Error()})
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
 
-	writeJSON(w, map[string]string{})
+	writeJSON(w, http.StatusOK, map[string]string{})
 }

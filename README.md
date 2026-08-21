@@ -42,7 +42,7 @@
 Сборка образа:
 1. `docker build -t scheduler .`
 
-Пример запуска контейнера с БД на хосте:
-1. `docker run --rm -p 7540:7540 -v "${PWD}/scheduler.db:/data/scheduler.db" -e TODO_PORT=7540 -e TODO_DBFILE=/data/scheduler.db -e TODO_PASSWORD=12345 scheduler`
+Пример запуска контейнера с БД на хосте
+1. `docker run --rm -p 7540:7540 -v "${PWD}/data:/data" -e TODO_PORT=7540 -e TODO_DBFILE=/data/scheduler.db -e TODO_PASSWORD=12345 scheduler`
 
 После запуска открыть `http://localhost:7540/`.
